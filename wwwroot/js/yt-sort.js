@@ -3,6 +3,7 @@ const playlistId = "";
 const apiKey = "";
 const clientId = "";
 
+
 const scope = 'https://www.googleapis.com/auth/youtube.force-ssl'; 
 const discoveryDocs = 'https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest';
 
@@ -62,72 +63,72 @@ function execute(nextPageToken) {
               execute(nextPageToken);
           }
           else {
-              console.log("There are " + items.length + " videos in your playlist");
-              let emp = "";
-
-              let lis = longestIncreasingSub(items);
-              let sortedItems = [...items];
-
-              console.log(items.length + "  " + lis.length + "   " + sortedItems.length);
-
-              let apiCallCounter = 0;
-
-              for (let i = 0; i < items.length; i++) {
-                  for (let j = 0; j < lis.length; j++) {
-                      if (lis[j].snippet.resourceId.videoId === items[i].snippet.resourceId.videoId) {
-                          break;
-                      }
-                      else {
-                          let temp = items[i];
-
-                          oldPos = findElementPosition(sortedItems, items[i]);
-                          newPos = findElementPosition(sortedItems, lis[j]);
-
-                          if (lis[j].snippet.title > items[i].snippet.title) {
-                              newPos = oldPos < newPos ? newPos - 2 : newPos;
-
-                              ChangeElementPosition(sortedItems, oldPos, newPos);
-                              setTimeout(updatePlayListItemPosition, 1000, items[i], newPos);
-
-                              lis.splice(j, 0, temp);
-
-                              apiCallCounter++;
-                              break;
-                          }
-                          else if (j === lis.length - 1) {
-                              newPos = oldPos < newPos ? newPos : newPos + 2;
-
-                              ChangeElementPosition(sortedItems, oldPos, newPos);
-                              setTimeout(updatePlayListItemPosition, 1000, items[i], newPos);
-
-                              lis.push(temp);
-
-                              apiCallCounter++;
-                              break;
-                          }
-                      }
-                  }
-              }
-
-              console.log("API calls " + apiCallCounter);              
+              processPlaylistItems(items);              
           }
             },
             function(err) { console.error("Execute error", err); });
 }
 
-function updatePlayListItemPosition(item, newPosition) {
-    var request = gapi.client.youtube.playlistItems.update({
-        "part": "snippet",
-        "id": item.id,
-        "snippet": {
-            "playlistId": item.snippet.playlistId,
-            "resourceId": item.snippet.resourceId,
-            "position": newPosition
-        }
-    });
+async function processPlaylistItems(items) {
 
-    request.execute(function (response) {
-        console.log(response);
+    let lis = longestIncreasingSub(items);
+    let sortedItems = [...items];
+
+    console.log(items.length + "  " + lis.length + "   " + sortedItems.length);
+
+    for (let i = 0; i < items.length; i++) {
+        for (let j = 0; j < lis.length; j++) {
+            if (lis[j].snippet.resourceId.videoId === items[i].snippet.resourceId.videoId) {
+                break;
+            }
+            else {
+                let temp = items[i];
+
+                oldPos = findElementPosition(sortedItems, items[i]);
+                newPos = findElementPosition(sortedItems, lis[j]);
+
+                if (lis[j].snippet.title > items[i].snippet.title) {
+                    newPos = oldPos < newPos ? newPos - 2 : newPos;
+
+                    ChangeElementPosition(sortedItems, oldPos, newPos);
+                    await updatePlayListItemPosition(items[i], newPos);
+
+                    lis.splice(j, 0, temp);
+
+                    apiCallCounter++;
+                    break;
+                }
+                else if (j === lis.length - 1) {
+                    newPos = oldPos < newPos ? newPos : newPos + 2;
+
+                    ChangeElementPosition(sortedItems, oldPos, newPos);
+                    await updatePlayListItemPosition(items[i], newPos);
+
+                    lis.push(temp);
+
+                    apiCallCounter++;
+                    break;
+                }
+            }
+        }
+    }
+}
+
+async function updatePlayListItemPosition(item, newPosition) {
+    return new Promise((resolve, reject) => {
+        var request = gapi.client.youtube.playlistItems.update({
+            "part": "snippet",
+            "id": item.id,
+            "snippet": {
+                "playlistId": item.snippet.playlistId,
+                "resourceId": item.snippet.resourceId,
+                "position": newPosition
+            }
+        });
+
+        request.execute(function (response) {
+            resolve(response);
+        });
     });
 
 } 
