@@ -1,4 +1,3 @@
-
 const playlistId = "";
 const apiKey = "";
 const clientId = "";
@@ -95,7 +94,6 @@ async function processPlaylistItems(items) {
 
                     lis.splice(j, 0, temp);
 
-                    apiCallCounter++;
                     break;
                 }
                 else if (j === lis.length - 1) {
@@ -106,7 +104,6 @@ async function processPlaylistItems(items) {
 
                     lis.push(temp);
 
-                    apiCallCounter++;
                     break;
                 }
             }
